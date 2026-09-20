@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   ValidationError,
   actionPrompt,
+  languageInstruction,
+  normalizeLanguage,
   trimHistory,
   validateDataUrlImage,
 } from "@/lib/context";
@@ -21,6 +23,7 @@ interface AnalyzeBody {
   conversation?: ChatMessage[];
   technicalMode?: boolean;
   summary?: string | null;
+  language?: unknown;
 }
 
 function errorResponse(status: number, code: string, message: string, retryAfterSec?: number) {
@@ -43,6 +46,8 @@ export async function POST(req: Request) {
     }
 
     const technicalMode = body?.technicalMode === true;
+    const language = normalizeLanguage(body?.language);
+    const langRule = languageInstruction(language);
     const summary = typeof body?.summary === "string" ? body.summary.slice(0, 3000) : null;
     const history = Array.isArray(body?.conversation)
       ? trimHistory(
@@ -63,10 +68,12 @@ export async function POST(req: Request) {
           {
             role: "system",
             content:
-              "Summarize the technical support session into exactly 5 short lines: Problem / Environment / Observed / Actions / Current State. Only use facts from the conversation. No advice.",
+              language === "ar"
+                ? `لخّص جلسة الدعم التقني في 5 أسطر قصيرة بالعربية تماماً: المشكلة / البيئة / المرصود / الإجراءات / الحالة الحالية. استخدم فقط حقائق من المحادثة. بدون نصائح.\n\n${langRule}`
+                : `Summarize the technical support session into exactly 5 short lines: Problem / Environment / Observed / Actions / Current State. Only use facts from the conversation. No advice.\n\n${langRule}`,
           },
           ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
-          { role: "user", content: "Write the 5-line session summary now." },
+          { role: "user", content: language === "ar" ? "اكتب ملخص الجلسة من 5 أسطر الآن." : "Write the 5-line session summary now." },
         ],
       });
       return NextResponse.json({ result: text, model: modelText, action });
@@ -80,8 +87,8 @@ export async function POST(req: Request) {
 
     const { vision } = getModelConfig();
     const system = technicalMode
-      ? "You are open Support, a visual technical support assistant in Technical Mode. Structure answers as: Error / Root Cause / Evidence / Recommended Action / Verification. Never invent details not visible or stated."
-      : "You are open Support, a visual technical support assistant. Describe only what you can observe. Never invent file names, error text, or UI elements. If unsure, say so clearly.";
+      ? `You are open Support, a visual technical support assistant in Technical Mode. Structure answers as: Error / Root Cause / Evidence / Recommended Action / Verification. Never invent details not visible or stated.\n\n${langRule}`
+      : `You are open Support, a visual technical support assistant. Describe only what you can observe. Never invent file names, error text, or UI elements. If unsure, say so clearly.\n\n${langRule}`;
 
     const userContent: Array<
       { type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }
@@ -101,7 +108,7 @@ export async function POST(req: Request) {
         text: `Recent conversation:\n${history.map((m) => `${m.role}: ${m.content}`).join("\n").slice(0, 3000)}`,
       });
     }
-    userContent.push({ type: "text", text: actionPrompt(action) });
+    userContent.push({ type: "text", text: actionPrompt(action, language) });
 
     const { text } = await groqComplete({
       model: vision,

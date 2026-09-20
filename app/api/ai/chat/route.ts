@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   ValidationError,
   buildVisionMessages,
+  languageInstruction,
+  normalizeLanguage,
   trimHistory,
   validateDataUrlImage,
 } from "@/lib/context";
@@ -18,6 +20,7 @@ interface ChatBody {
   previousImage?: string | null;
   technicalMode?: boolean;
   summary?: string | null;
+  language?: unknown;
   stream?: boolean;
 }
 
@@ -43,6 +46,8 @@ export async function POST(req: Request) {
     const currentImage = validateDataUrlImage(body.currentImage ?? null, "currentImage", false);
     const previousImage = validateDataUrlImage(body.previousImage ?? null, "previousImage", false);
     const technicalMode = body.technicalMode === true;
+    const language = normalizeLanguage(body.language);
+    const langRule = languageInstruction(language);
     const summary = typeof body.summary === "string" ? body.summary.slice(0, 3000) : null;
     const history = trimHistory(
       body.messages.filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string") as ChatMessage[],
@@ -60,13 +65,15 @@ export async function POST(req: Request) {
           history: history.slice(0, -1),
           summary,
           technicalMode,
+          language,
         })
       : [
           {
             role: "system" as const,
-            content: technicalMode
-              ? "You are open Support, a technical support assistant. Use the structured format: Error / Root Cause / Evidence / Recommended Action / Verification. Never invent details the user did not provide."
-              : "You are open Support, a technical support assistant. Answer from the conversation context. Never invent screen content you cannot see; if you need the screen, ask the user to share it and run Analyze Screen.",
+            content:
+              technicalMode
+                ? `You are open Support, a technical support assistant. Use the structured format: Error / Root Cause / Evidence / Recommended Action / Verification. Never invent details the user did not provide.\n\n${langRule}`
+                : `You are open Support, a technical support assistant. Answer from the conversation context. Never invent screen content you cannot see; if you need the screen, ask the user to share it and run Analyze Screen.\n\n${langRule}`,
           },
           ...(summary
             ? [{ role: "system" as const, content: `Session summary so far:\n${summary.slice(0, 2000)}` }]

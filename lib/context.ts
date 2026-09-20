@@ -28,6 +28,24 @@ When Technical Mode is ON, structure every diagnostic answer exactly as:
 4. Recommended Action — numbered fix steps.
 5. Verification — how the user confirms the fix worked.`;
 
+export type UILanguage = "en" | "ar";
+
+export function normalizeLanguage(value: unknown): UILanguage {
+  return value === "ar" ? "ar" : "en";
+}
+
+export function languageInstruction(language: UILanguage): string {
+  if (language === "ar") {
+    return [
+      "Response language (critical): reply ENTIRELY in Arabic (Modern Standard Arabic).",
+      "Write Arabic sentences fully in Arabic with خط ثمانية-friendly plain wording.",
+      "Put every English technical term, file name, path, command, code, error message, URL, or variable inside inline code with backticks (e.g. `next.config.js`, `npm install`) or in a fenced code block — never mix Arabic and English words inline without separation.",
+      "Use clear structure: headings, numbered steps, bullet lists. Keep all code blocks, commands, and quoted errors strictly LTR.",
+    ].join("\n");
+  }
+  return "Response language: reply in English unless the user writes in another language (if the user writes in Arabic, reply in Arabic).";
+}
+
 export function trimHistory(messages: ChatMessage[]): { role: "user" | "assistant"; content: string }[] {
   return messages
     .filter((m) => m.role === "user" || m.role === "assistant")
@@ -53,10 +71,13 @@ interface VisionRequest {
   history: { role: "user" | "assistant"; content: string }[];
   summary: string | null;
   technicalMode: boolean;
+  language?: UILanguage;
 }
 
 export function buildVisionMessages(req: VisionRequest): GroqMessage[] {
-  const system = req.technicalMode ? TECHNICAL_SYSTEM_PROMPT : BASE_SYSTEM_PROMPT;
+  const language = req.language === "ar" ? "ar" : "en";
+  const base = req.technicalMode ? TECHNICAL_SYSTEM_PROMPT : BASE_SYSTEM_PROMPT;
+  const system = `${base}\n\n${languageInstruction(language)}`;
   const messages: GroqMessage[] = [{ role: "system", content: system }];
   if (req.summary) {
     messages.push({
@@ -97,7 +118,16 @@ const ACTION_PROMPTS: Record<AnalyzeAction, string> = {
   summarize: `Summarize the technical situation visible on this screen in 5 short lines: Problem / Environment / Observed / Likely cause / Current state. Only use information visible in the screenshot or already stated in the conversation.`,
 };
 
-export function actionPrompt(action: AnalyzeAction): string {
+const ACTION_PROMPTS_AR: Record<AnalyzeAction, string> = {
+  analyze: `حلّل هذه الشاشة وأجب بالعربية بالكامل. اذكر: (1) التطبيق الظاهر — ما النافذة المعروضة. (2) المشكلة المحتملة — أي خطأ ظاهر مع اقتباس النص الدقيق. (3) معلومات مهمة — أسماء ملفات أو مسارات أو إصدارات تقرؤها. (4) الخطوة التالية المقترحة — إجراء واحد ملموس. إن لم يظهر خلل، صف الشاشة واذكر أنه لا توجد مشكلة ظاهرة.`,
+  "explain-error": `اقرأ كل رسائل الخطأ وسطور السجل وتتبع المكدس الظاهرة على هذه الشاشة وأجب بالعربية. اقتبس نص الخطأ الدقيق، واشرح معناه بكلمات بسيطة، واذكر الأسباب المرجحة، وقدم خطوات إصلاح مرقمة. إن لم يكن أي نص خطأ مقروءاً، اذكر ذلك بدقة وأخبر المستخدم أي لوحة يفتح أو يكبّر.`,
+  "what-changed": `توجد لقطتان: السابقة ثم الحالية. صف بدقة بالعربية ما الذي تغيّر بينهما (تنقل، أخطاء جديدة، كود معدل، لوحات مفتوحة/مغلقة، قيم مختلفة). إن بدتا متطابقتين فاذكر ذلك. لا تخترع فروقات.`,
+  "next-step": `بناءً على حالة الشاشة الظاهرة، أعطِ بالعربية أنفع خطوة تالية مع متابعتين قصيرتين. كن ملموساً (زر أو أمر أو ملف دقيق). إن كان الهدف غير واضح، اذكر افتراضك واطرح سؤالاً توضيحياً واحداً.`,
+  summarize: `لخّص بالعربية الوضع التقني الظاهر على هذه الشاشة في 5 أسطر قصيرة: المشكلة / البيئة / المرصود / السبب المرجح / الحالة الحالية. استخدم فقط معلومات ظاهرة في اللقطة أو مذكورة في المحادثة.`,
+};
+
+export function actionPrompt(action: AnalyzeAction, language: UILanguage = "en"): string {
+  if (language === "ar") return ACTION_PROMPTS_AR[action];
   return ACTION_PROMPTS[action];
 }
 

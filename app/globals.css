@@ -36,6 +36,40 @@ body {
   margin: 0;
 }
 
+/* ---------- Arabic (خط ثمانية) ---------- */
+/* Primary: "Thmanyah Sans" via CDN. Fallback: IBM Plex Sans Arabic (next/font), then system fonts. */
+html[lang="ar"] body {
+  font-family:
+    "Thmanyah Sans",
+    var(--font-arabic-fallback),
+    "IBM Plex Sans Arabic",
+    "Segoe UI",
+    Tahoma,
+    system-ui,
+    sans-serif;
+  line-height: 1.7;
+  letter-spacing: 0 !important;
+}
+html[lang="ar"] .landing-title,
+html[lang="ar"] .brand-name,
+html[lang="ar"] .chat-title,
+html[lang="ar"] .modal-title,
+html[lang="ar"] .docs-page h1,
+html[lang="ar"] .docs-page h2 {
+  font-family:
+    "Thmanyah Serif Display",
+    "Thmanyah Sans",
+    var(--font-arabic-fallback),
+    "IBM Plex Sans Arabic",
+    serif;
+}
+html[lang="ar"] .landing-kicker,
+html[lang="ar"] .sidebar-title,
+html[lang="ar"] .timeline-title,
+html[lang="ar"] .status-label {
+  letter-spacing: 0.02em;
+}
+
 button,
 textarea,
 input {
@@ -1246,4 +1280,86 @@ input:focus-visible,
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* ---------- RTL (Arabic) layout mirrors ---------- */
+[dir="rtl"] .sidebar {
+  border-right: none;
+  border-left: 1px solid var(--border-soft);
+}
+[dir="rtl"] .screen-pane {
+  border-right: none;
+  border-left: 1px solid var(--border-soft);
+}
+[dir="rtl"] .preview-screen {
+  border-right: none;
+  border-left: 1px solid var(--border-soft);
+}
+[dir="rtl"] .preview-title {
+  margin-left: 0;
+  margin-right: 8px;
+}
+[dir="rtl"] .sidebar-link {
+  text-align: right;
+}
+[dir="rtl"] .modal-list {
+  padding-left: 0;
+  padding-right: 18px;
+}
+[dir="rtl"] .setting-meta dd {
+  text-align: left;
+}
+@media (max-width: 860px) {
+  [dir="rtl"] .sidebar {
+    left: auto;
+    right: 0;
+    transform: translateX(100%);
+  }
+  [dir="rtl"] .sidebar.open {
+    transform: translateX(0);
+  }
+  [dir="rtl"] .preview-screen {
+    border-left: none;
+    border-bottom: 1px solid var(--border-soft);
+  }
+}
+@media (max-width: 1024px) {
+  [dir="rtl"] .screen-pane {
+    border-left: none;
+    border-bottom: 1px solid var(--border-soft);
+  }
+}
+
+/* ---------- language toggle (icon button, no emoji) ---------- */
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lang-toggle:hover {
+  color: var(--text);
+  background: var(--panel-2);
+  border-color: var(--accent);
+}
+.lang-toggle svg {
+  flex: none;
+}
+.landing-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.statusbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }

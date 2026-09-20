@@ -9,12 +9,14 @@ import {
   X,
 } from "lucide-react";
 import type { PersistedSession } from "@/lib/types";
+import type { Strings } from "@/lib/i18n";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   sessions: PersistedSession[];
   activeSessionId: string | null;
+  t: Strings;
   onNew: () => void;
   onOpenSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
@@ -37,6 +39,7 @@ function fmtDate(iso: string): string {
 }
 
 export default function Sidebar(props: Props) {
+  const { t } = props;
   return (
     <>
       <div
@@ -44,15 +47,15 @@ export default function Sidebar(props: Props) {
         onClick={props.onClose}
         aria-hidden={!props.open}
       />
-      <aside className={`sidebar ${props.open ? "open" : ""}`} aria-label="Application sidebar">
+      <aside className={`sidebar ${props.open ? "open" : ""}`} aria-label={t.sidebar.label}>
         <div className="sidebar-head">
           <div className="brand">
             <span className="brand-mark" aria-hidden="true">
               <MonitorUp size={16} />
             </span>
-            <span className="brand-name">open Support</span>
+            <span className="brand-name">{t.brand}</span>
           </div>
-          <button type="button" className="icon-btn sidebar-close" onClick={props.onClose} aria-label="Close sidebar">
+          <button type="button" className="icon-btn sidebar-close" onClick={props.onClose} aria-label={t.sidebar.closeSidebar}>
             <X size={16} />
           </button>
         </div>
@@ -66,13 +69,13 @@ export default function Sidebar(props: Props) {
           }}
         >
           <Plus size={15} />
-          <span>New Session</span>
+          <span>{t.sidebar.newSession}</span>
         </button>
 
         <div className="sidebar-section">
-          <h2 className="sidebar-title">Sessions</h2>
+          <h2 className="sidebar-title">{t.sidebar.sessions}</h2>
           {props.sessions.length === 0 ? (
-            <p className="sidebar-empty">No saved sessions yet. Sessions are stored on this device only.</p>
+            <p className="sidebar-empty">{t.sidebar.empty}</p>
           ) : (
             <ul className="session-list">
               {props.sessions.map((s) => (
@@ -92,18 +95,18 @@ export default function Sidebar(props: Props) {
                         props.onClose();
                       }
                     }}
-                    aria-label={`Open session from ${fmtDate(s.createdAt)}`}
+                    aria-label={`${t.sidebar.openSession} ${fmtDate(s.createdAt)}`}
                   >
                     <div className="session-item-main">
                       <span className="session-item-date">{fmtDate(s.createdAt)}</span>
                       <span className="session-item-meta">
-                        {s.messageCount} messages · {s.status}
+                        {s.messageCount} {t.misc.messagesUnit} · {t.sessionState[s.status] ?? s.status}
                       </span>
                     </div>
                     <button
                       type="button"
                       className="icon-btn danger"
-                      aria-label="Delete session"
+                      aria-label={t.sidebar.deleteSession}
                       onClick={(e) => {
                         e.stopPropagation();
                         props.onDeleteSession(s.id);
@@ -118,7 +121,7 @@ export default function Sidebar(props: Props) {
           )}
         </div>
 
-        <nav className="sidebar-nav" aria-label="Secondary">
+        <nav className="sidebar-nav" aria-label={t.sidebar.secondary}>
           <button
             type="button"
             className="sidebar-link"
@@ -128,7 +131,7 @@ export default function Sidebar(props: Props) {
             }}
           >
             <Settings size={15} />
-            <span>Settings</span>
+            <span>{t.sidebar.settings}</span>
           </button>
           <button
             type="button"
@@ -139,12 +142,12 @@ export default function Sidebar(props: Props) {
             }}
           >
             <FileText size={15} />
-            <span>Documentation</span>
+            <span>{t.sidebar.documentation}</span>
           </button>
         </nav>
 
         <p className="sidebar-foot">
-          {props.hasActiveSession ? "Session active on this device." : "No personal data leaves this device except frames you send to Groq for analysis."}
+          {props.hasActiveSession ? t.sidebar.footActive : t.sidebar.footIdle}
         </p>
       </aside>
     </>

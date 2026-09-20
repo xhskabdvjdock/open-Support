@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import type { Strings } from "@/lib/i18n";
 
 /** Minimal safe Markdown renderer: escapes HTML, supports the subset AI replies use. */
 
@@ -132,7 +133,7 @@ function parse(src: string): Block[] {
   return blocks;
 }
 
-function CodeBlock({ lang, text }: { lang: string; text: string }) {
+function CodeBlock({ lang, text, t }: { lang: string; text: string; t: Strings }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -147,9 +148,9 @@ function CodeBlock({ lang, text }: { lang: string; text: string }) {
     <div className="md-codeblock">
       <div className="md-codeblock-bar">
         <span className="md-codeblock-lang">{lang}</span>
-        <button type="button" onClick={copy} className="md-copy-btn" aria-label={`Copy ${lang} code`}>
+        <button type="button" onClick={copy} className="md-copy-btn" aria-label={`${t.chat.copyCode} ${lang}`}>
           {copied ? <Check size={13} /> : <Copy size={13} />}
-          <span>{copied ? "Copied" : "Copy code"}</span>
+          <span>{copied ? t.copied : t.chat.copyCode}</span>
         </button>
       </div>
       <pre className="md-pre"><code>{text}</code></pre>
@@ -157,13 +158,13 @@ function CodeBlock({ lang, text }: { lang: string; text: string }) {
   );
 }
 
-export default function Markdown({ text }: { text: string }) {
+export default function Markdown({ text, t }: { text: string; t: Strings }) {
   const blocks = parse(text);
   return (
     <div className="md-root">
       {blocks.map((b) =>
         b.code ? (
-          <CodeBlock key={b.key} lang={b.code.lang} text={b.code.text} />
+          <CodeBlock key={b.key} lang={b.code.lang} text={b.code.text} t={t} />
         ) : (
           <div key={b.key} dangerouslySetInnerHTML={{ __html: b.html ?? "" }} />
         ),

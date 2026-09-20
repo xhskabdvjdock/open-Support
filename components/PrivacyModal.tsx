@@ -1,14 +1,16 @@
 "use client";
 
 import { ShieldAlert, X } from "lucide-react";
+import type { Strings } from "@/lib/i18n";
 
 interface Props {
   open: boolean;
+  t: Strings;
   onAccept: () => void;
   onCancel: () => void;
 }
 
-export default function PrivacyModal({ open, onAccept, onCancel }: Props) {
+export default function PrivacyModal({ open, t, onAccept, onCancel }: Props) {
   if (!open) return null;
   return (
     <div className="modal-scrim" role="dialog" aria-modal="true" aria-labelledby="privacy-title">
@@ -16,30 +18,29 @@ export default function PrivacyModal({ open, onAccept, onCancel }: Props) {
         <div className="modal-head">
           <h2 id="privacy-title" className="modal-title">
             <ShieldAlert size={16} aria-hidden="true" />
-            <span>Before you share your screen</span>
+            <span>{t.privacy.title}</span>
           </h2>
-          <button type="button" className="icon-btn" onClick={onCancel} aria-label="Cancel screen sharing">
+          <button type="button" className="icon-btn" onClick={onCancel} aria-label={t.privacy.cancelSharing}>
             <X size={16} />
           </button>
         </div>
         <div className="modal-body">
           <p>
-            Only share information you are comfortable showing. Avoid passwords, private keys, personal messages, or
-            sensitive information.
+            {t.privacy.body}
           </p>
           <ul className="modal-list">
-            <li>Your browser will ask which screen, window, or tab to share. Nothing is shared until you confirm.</li>
-            <li>Frames you capture are sent to the Groq API for vision analysis. They are not stored on our servers.</li>
-            <li>Chat sessions are saved in this browser only (localStorage), without screenshots.</li>
-            <li>Stop sharing at any time. Tracks are closed and analysis stops immediately.</li>
+            <li>{t.privacy.li1}</li>
+            <li>{t.privacy.li2}</li>
+            <li>{t.privacy.li3}</li>
+            <li>{t.privacy.li4}</li>
           </ul>
         </div>
         <div className="modal-foot">
           <button type="button" className="btn-ghost btn-sm" onClick={onCancel}>
-            Cancel
+            {t.cancel}
           </button>
           <button type="button" className="btn-primary btn-sm" onClick={onAccept} autoFocus>
-            Start Screen Sharing
+            {t.privacy.accept}
           </button>
         </div>
       </div>

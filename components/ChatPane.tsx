@@ -14,12 +14,14 @@ import {
   Volume2,
 } from "lucide-react";
 import type { AiStatus, AnalyzeAction, ChatMessage } from "@/lib/types";
+import type { Strings } from "@/lib/i18n";
 import Markdown from "./Markdown";
 
 interface Props {
   messages: ChatMessage[];
   aiStatus: AiStatus;
   input: string;
+  t: Strings;
   onInput: (v: string) => void;
   onSend: () => void;
   onQuickAction: (a: AnalyzeAction) => void;
@@ -37,21 +39,6 @@ interface Props {
   technicalMode: boolean;
 }
 
-function aiStatusLabel(s: AiStatus): string {
-  switch (s) {
-    case "ready":
-      return "Ready";
-    case "analyzing":
-      return "Analyzing screen";
-    case "thinking":
-      return "Thinking";
-    case "waiting-input":
-      return "Waiting for input";
-    case "error":
-      return "Error";
-  }
-}
-
 function fmtTime(iso: string): string {
   try {
     return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
@@ -60,17 +47,10 @@ function fmtTime(iso: string): string {
   }
 }
 
-const QUICK_ACTIONS: { action: AnalyzeAction; label: string; icon: typeof ScanSearch }[] = [
-  { action: "analyze", label: "Analyze Screen", icon: ScanSearch },
-  { action: "explain-error", label: "Explain Error", icon: FileSearch },
-  { action: "what-changed", label: "What Changed?", icon: ListOrdered },
-  { action: "next-step", label: "Next Step", icon: Sparkles },
-  { action: "summarize", label: "Summarize", icon: RefreshCw },
-];
-
 export default function ChatPane(props: Props) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = props;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -83,20 +63,30 @@ export default function ChatPane(props: Props) {
     }
   };
 
+  const QUICK_ACTIONS: { action: AnalyzeAction; label: string; icon: typeof ScanSearch }[] = [
+    { action: "analyze", label: t.chat.analyzeScreen, icon: ScanSearch },
+    { action: "explain-error", label: t.chat.explainError, icon: FileSearch },
+    { action: "what-changed", label: t.chat.whatChanged, icon: ListOrdered },
+    { action: "next-step", label: t.chat.nextStep, icon: Sparkles },
+    { action: "summarize", label: t.chat.summarize, icon: RefreshCw },
+  ];
+
+  const aiStatusLabel = t.aiStatus[props.aiStatus] ?? props.aiStatus;
+
   return (
-    <section className="chat-pane" aria-label="AI chat">
+    <section className="chat-pane" aria-label={t.chat.title}>
       <div className="chat-head">
         <div className="chat-head-left">
-          <h2 className="chat-title">AI Chat</h2>
+          <h2 className="chat-title">{t.chat.title}</h2>
           <span className={`ai-badge status-${props.aiStatus}`} role="status">
             <span className="ai-dot" aria-hidden="true" />
-            {aiStatusLabel(props.aiStatus)}
+            {aiStatusLabel}
           </span>
         </div>
-        {props.technicalMode && <span className="tech-badge">Technical</span>}
+        {props.technicalMode && <span className="tech-badge">{t.chat.technical}</span>}
       </div>
 
-      <div className="quick-actions" role="toolbar" aria-label="Quick AI actions">
+      <div className="quick-actions" role="toolbar" aria-label={t.chat.quickActions}>
         {QUICK_ACTIONS.map(({ action, label, icon: Icon }) => (
           <button
             key={action}
@@ -112,26 +102,25 @@ export default function ChatPane(props: Props) {
         ))}
       </div>
 
-      <div className="messages" role="log" aria-live="polite" aria-label="Conversation">
+      <div className="messages" role="log" aria-live="polite" aria-label={t.chat.conversation}>
         {props.messages.length === 0 && (
           <div className="chat-empty">
-            <p className="chat-empty-title">Ask about what is on your screen</p>
+            <p className="chat-empty-title">{t.chat.emptyTitle}</p>
             <p className="chat-empty-sub">
-              Share your screen, capture a frame, then ask for example: “Where is the problem?” or “What should I do
-              next?”
+              {t.chat.emptySub}
             </p>
           </div>
         )}
         {props.messages.map((m) => (
           <article key={m.id} className={`msg msg-${m.role}`}>
             <div className="msg-meta">
-              <span className="msg-role">{m.role === "user" ? "You" : m.role === "assistant" ? "AI" : "System"}</span>
+              <span className="msg-role">{m.role === "user" ? t.chat.you : m.role === "assistant" ? t.chat.ai : t.chat.system}</span>
               <span className="msg-time">{fmtTime(m.at)}</span>
-              {m.groundedInScreen && m.role === "assistant" && <span className="msg-grounded">from screen</span>}
-              {m.streaming && <span className="msg-streaming">streaming</span>}
+              {m.groundedInScreen && m.role === "assistant" && <span className="msg-grounded">{t.chat.fromScreen}</span>}
+              {m.streaming && <span className="msg-streaming">{t.chat.streaming}</span>}
             </div>
             <div className="msg-body" dir="auto">
-              {m.role === "assistant" ? <Markdown text={m.content} /> : <p className="msg-text" dir="auto">{m.content}</p>}
+              {m.role === "assistant" ? <Markdown text={m.content} t={t} /> : <p className="msg-text" dir="auto">{m.content}</p>}
             </div>
             {m.role === "assistant" && !m.streaming && (
               <div className="msg-actions">
@@ -139,14 +128,14 @@ export default function ChatPane(props: Props) {
                   type="button"
                   className="mini-btn"
                   onClick={() => props.onCopyMessage(m.id)}
-                  aria-label="Copy message"
+                  aria-label={t.chat.copyMessage}
                 >
                   <Copy size={12} />
-                  <span>{props.copiedId === m.id ? "Copied" : "Copy"}</span>
+                  <span>{props.copiedId === m.id ? t.copied : t.copy}</span>
                 </button>
-                <button type="button" className="mini-btn" onClick={() => props.onSpeak(m.content)} aria-label="Read response aloud">
+                <button type="button" className="mini-btn" onClick={() => props.onSpeak(m.content)} aria-label={t.chat.readAloud}>
                   <Volume2 size={12} />
-                  <span>{props.speaking ? "Stop" : "Read"}</span>
+                  <span>{props.speaking ? t.chat.stop : t.chat.read}</span>
                 </button>
               </div>
             )}
@@ -167,9 +156,9 @@ export default function ChatPane(props: Props) {
             type="button"
             className={`icon-btn mic-btn ${props.listening ? "recording" : ""}`}
             onClick={props.onToggleVoice}
-            aria-label={props.listening ? "Stop voice input" : "Start voice input"}
+            aria-label={props.listening ? t.chat.micStop : t.chat.micStart}
             aria-pressed={props.listening}
-            title={props.listening ? "Stop listening" : "Speak your question"}
+            title={props.listening ? t.chat.micListening : t.chat.micSpeak}
           >
             {props.listening ? <MicOff size={16} /> : <Mic size={16} />}
           </button>
@@ -182,18 +171,18 @@ export default function ChatPane(props: Props) {
           value={props.input}
           onChange={(e) => props.onInput(e.target.value)}
           onKeyDown={sendOnEnter}
-          placeholder={props.canAsk ? "Ask AI about your screen..." : "Ask AI (works without screen sharing too)..."}
-          aria-label="Ask AI about your screen"
+          placeholder={props.canAsk ? t.chat.placeholderCanAsk : t.chat.placeholderGeneric}
+          aria-label={t.chat.askLabel}
         />
         <button
           type="button"
           className="btn-primary btn-sm composer-send"
           onClick={props.onSend}
           disabled={!props.input.trim() || props.aiStatus === "thinking" || props.aiStatus === "analyzing"}
-          aria-label="Send message"
+          aria-label={t.chat.send}
         >
           <Send size={14} />
-          <span>Send</span>
+          <span>{t.chat.sendShort}</span>
         </button>
       </div>
       <div className="composer-foot">
@@ -204,9 +193,9 @@ export default function ChatPane(props: Props) {
           disabled={!props.canRegenerate || props.aiStatus === "thinking" || props.aiStatus === "analyzing"}
         >
           <RefreshCw size={12} />
-          <span>Regenerate last answer</span>
+          <span>{t.chat.regenerate}</span>
         </button>
-        <span className="composer-hint">Enter to send · Shift+Enter for a new line</span>
+        <span className="composer-hint">{t.chat.hint}</span>
       </div>
     </section>
   );
